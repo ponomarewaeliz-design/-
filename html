@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>С Днём Отца, папа! 💙</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-1: #f7f3ec;
+    --bg-2: #e8e0d4;
+    --card: #fdfbf7;
+    --text: #4a4a48;
+    --text-2: #8a857a;
+    --border: #e8e0d5;
+    --accent: #8fa68e;
+    --accent-dark: #768c74;
+    --rose: #c49a9a;
+    --gold: #c9a961;
+    --ok: #7a9b78;
+    --err: #b88484;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: linear-gradient(160deg, var(--bg-1), var(--bg-2));
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #bgCanvas {
+    position: fixed; inset: 0;
+    z-index: 0;
+    display: block;
+  }
+
+  /* ========== Экраны ========== */
+  .screen {
+    position: fixed; inset: 0;
+    z-index: 10;
+    display: flex;
+    padding: 20px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    opacity: 1;
+    transition: opacity .45s ease;
+  }
+  .screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .card {
+    margin: auto;
+    width: 100%;
+    max-width: 560px;
+    text-align: center;
+    padding: 38px 30px 42px;
+    border-radius: 26px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 50px rgba(120, 105, 85, .12),
+                0 4px 12px rgba(120, 105, 85, .06);
+  }
+
+  .badge {
+    display: inline-block;
+    margin-bottom: 18px;
+    padding: 7px 18px;
+    font-size: 12px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent-dark);
+    background: rgba(143, 166, 142, .14);
+    border: 1px solid rgba(143, 166, 142, .3);
+    border-radius: 999px;
+  }
+
+  h1 {
+    font-size: clamp(28px, 6vw, 40px);
+    line-height: 1.18;
+    font-weight: 800;
+    letter-spacing: -.015em;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+  h1 .accent { color: var(--accent-dark); }
+
+  .sub {
+    font-size: 15.5px;
+    line-height: 1.6;
+    color: var(--text-2);
+    margin-bottom: 24px;
+  }
+
+  .input {
+    display: block;
+    width: 100%; max-width: 320px;
+    margin: 0 auto 22px;
+    padding: 14px 18px;
+    font: inherit; font-size: 16px;
+    text-align: center;
+    color: var(--text);
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .input::placeholder { color: #b8b0a0; }
+  .input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(143, 166, 142, .15);
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 15px 44px;
+    font: inherit; font-size: 16.5px; font-weight: 700;
+    color: #fff;
+    background: linear-gradient(180deg, #9db59c, #7f987e);
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(143, 166, 142, .35),
+                inset 0 -2px 0 rgba(0, 0, 0, .08);
+    transition: transform .15s ease, box-shadow .15s ease;
+    letter-spacing: .01em;
+  }
+  .btn:hover  { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(143, 166, 142, .45); }
+  .btn:active { transform: translateY(0) scale(.99); }
+
+  .btn.rose {
+    background: linear-gradient(180deg, #d2a8a8, #b58686);
+    box-shadow: 0 8px 20px rgba(196, 154, 154, .35);
+  }
+  .btn.rose:hover { box-shadow: 0 14px 28px rgba(196, 154, 154, .5); }
+
+  /* ========== Прогресс ========== */
+  .progress {
+    position: fixed;
+    top: 22px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 15;
+    display: flex;
+    gap: 10px;
+    padding: 10px 18px;
+    background: rgba(253, 251, 247, .85);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(120, 105, 85, .12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    opacity: 0;
+    transition: opacity .4s;
+    pointer-events: none;
+  }
+  .progress.show { opacity: 1; }
+  .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #d8d0c0;
+    transition: all .3s;
+  }
+  .dot.done    { background: var(--accent); }
+  .dot.current { background: var(--rose); transform: scale(1.4); box-shadow: 0 0 0 3px rgba(196, 154, 154, .2); }
+
+  /* ========== Викторина ========== */
+  .quiz-counter {
+    display: inline-block;
+    padding: 6px 16px;
+    margin-bottom: 18px;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--text-2);
+    background: #f3eee4;
+    border-radius: 999px;
+    text-transform: uppercase;
+  }
+
+  .question {
+    font-size: clamp(19px, 4.3vw, 24px);
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--text);
+    margin-bottom: 26px;
+    letter-spacing: -.01em;
+  }
+
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+  }
+  @media (max-width: 520px) { .options { grid-template-columns: 1fr; } }
+
+  .option {
+    padding: 15px 18px;
+    font: inherit;
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--text);
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all .2s;
+    line-height: 1.3;
+  }
+  .option:hover {
+    background: #f5f1e8;
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .option.correct {
+    background: #eaf1e8 !important;
+    border-color: var(--ok) !important;
+    color: #4d6949 !important;
+    animation: correctPulse .5s ease;
+  }
+  .option.wrong {
+    background: #f7eaea !important;
+    border-color: var(--err) !important;
+    color: #8b5252 !important;
+    animation: shake .4s ease;
+  }
+  .option:disabled { cursor: default; transform: none !important; }
+  @keyframes correctPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.04); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25%      { transform: translateX(-5px); }
+    75%      { transform: translateX(5px); }
+  }
+
+  .feedback {
+    font-size: 14.5px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all .3s;
+    line-height: 1.4;
+  }
+  .feedback.show { opacity: 1; margin-top: 22px; }
+  .feedback.ok { color: var(--ok); }
+  .feedback.no { color: var(--err); }
+
+  /* ========== Поздравление ========== */
+  .greeting-screen-content {
+    margin: auto;
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+  }
+
+  .greeting-card {
+    width: 100%;
+    padding: 32px 26px 32px;
+    border-radius: 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 50px rgba(120, 105, 85, .12),
+                0 4px 12px rgba(120, 105, 85, .06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    text-align: center;
+    animation: pop .5s cubic-bezier(.2, 1.4, .5, 1) both;
+  }
+  @keyframes pop {
+    from { transform: scale(.94) translateY(10px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  .photo-frame {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #fff;
+    box-shadow: 0 8px 22px rgba(120, 105, 85, .18),
+                0 0 0 1px var(--border);
+    background: #eee8dd;
+    flex-shrink: 0;
+  }
+  .photo-frame img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+
+  .greeting-name {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 21px;
+    font-weight: 800;
+    color: var(--accent-dark);
+    letter-spacing: -.01em;
+  }
+  .greeting-name .avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    font-size: 28px;
+    line-height: 1;
+    background: #f3eee4;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+
+  .greeting-text {
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--text);
+    max-width: 420px;
+  }
+
+  /* ========== Финал ========== */
+  .video-wrap {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #e8e0d4;
+    border-radius: 18px;
+    overflow: hidden;
+    margin: 22px 0;
+    position: relative;
+    box-shadow: 0 14px 36px rgba(120, 105, 85, .18);
+    border: 1px solid var(--border);
+  }
+  .video-wrap video {
+    width: 100%; height: 100%; display: block;
+    object-fit: contain;
+    background: #000;
+  }
+
+  .video-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    background: linear-gradient(160deg, #f3eee4, #e8e0d4);
+    text-align: center;
+    color: var(--text);
+  }
+  .video-fallback.hidden { display: none; }
+  .fallback-icon {
+    font-size: 46px;
+    margin-bottom: 4px;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-7px); }
+  }
+  .video-fallback p {
+    font-size: 14.5px;
+    line-height: 1.5;
+    max-width: 400px;
+    color: var(--text-2);
+  }
+  .video-fallback .small {
+    font-size: 12.5px;
+    color: #a89e8c;
+  }
+  .video-fallback code {
+    background: rgba(143, 166, 142, .15);
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    color: var(--accent-dark);
+  }
+
+  .final-message {
+    font-size: 15.5px;
+    line-height: 1.65;
+    color: var(--text);
+    padding: 18px;
+    background: #f3eee4;
+    border-radius: 14px;
+    margin-bottom: 22px;
+  }
+
+  #confettiCanvas {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+    display: none;
+  }
+
+  @media (max-width: 420px) {
+    .card { padding: 28px 20px 32px; border-radius: 22px; }
+    .photo-frame { width: 124px; height: 124px; }
+    .greeting-name { font-size: 19px; }
+    .greeting-name .avatar { width: 38px; height: 38px; font-size: 24px; }
+    .greeting-text { font-size: 15px; }
+    .progress { top: 14px; padding: 8px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+<div class="progress" id="progress"></div>
+
+<!-- ===== Экран приветствия ===== -->
+<section class="screen" id="screenWelcome">
+  <div class="card">
+    <div class="badge">С Днём Отца</div>
+    <h1>Папа, <span class="accent">это для тебя</span></h1>
+    <p class="sub">Ответь на 5 вопросов о нашей семье —<br>и получи поздравление от каждого из нас 💛</p>
+    <input class="input" id="dadName" type="text" maxlength="20" placeholder="Как тебя зовут, папа?" autocomplete="off">
+    <button class="btn" id="startBtn">Начать</button>
+  </div>
+</section>
+
+<!-- ===== Экран вопроса ===== -->
+<section class="screen hidden" id="screenQuiz">
+  <div class="card">
+    <div class="quiz-counter" id="quizCounter"></div>
+    <h2 class="question" id="questionText"></h2>
+    <div class="options" id="optionsContainer"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+</section>
+
+<!-- ===== Экран поздравления ===== -->
+<section class="screen hidden" id="screenGreeting">
+  <div class="greeting-screen-content">
+    <div class="greeting-card" id="greetingCard">
+      <div class="photo-frame">
+        <img id="greetingPhoto" src="" alt="Семейное фото">
+      </div>
+      <div class="greeting-name" id="greetingName"></div>
+      <div class="greeting-text" id="greetingText"></div>
+    </div>
+    <button class="btn rose" id="nextBtn">Дальше →</button>
+  </div>
+</section>
+
+<!-- ===== Финальный экран ===== -->
+<section class="screen hidden" id="screenFinal">
+  <div class="card">
+    <h1 id="finalTitle">С Днём Отца, папа!</h1>
+    <p class="sub">Наше видео-поздравление для тебя:</p>
+    <div class="video-wrap" id="videoWrap">
+      <video id="finalVideo" controls playsinline preload="metadata"></video>
+      <div class="video-fallback hidden" id="videoFallback">
+        <div class="fallback-icon">🎬</div>
+        <p>Здесь будет наше видео-поздравление</p>
+        <p class="small">Положите файл <code>video/greeting.mp4</code> рядом с этим файлом</p>
+      </div>
+    </div>
+    <div class="final-message">
+      Спасибо, что ты рядом — пусть и на расстоянии. Мы тебя очень любим ❤️
+    </div>
+    <button class="btn" id="restartBtn">Смотреть снова</button>
+  </div>
+</section>
+
+<canvas id="confettiCanvas"></canvas>
+
+<script>
+(() => {
+  'use strict';
+
+  /* =========================================================
+     НАСТРОЙКИ — ФОТО, ВОПРОСЫ, ПОЗДРАВЛЕНИЯ И ВИДЕО
+     ========================================================= */
+
+  const VIDEO_SRC = 'video/greeting.mp4'; // ← положите свой видеофайл
+
+  const CHILDREN = [
+    {
+      name: 'Лиза',
+      avatar: '👩',
+      photo: 'https://placehold.co/400x400/d7c8b8/4a4a48?text=Лиза',
+      question: {
+        text: 'Какие хобби у Лизы?',
+        options: ['Фотография и танцы', 'Рисование и спорт', 'Музыка и кулинария', 'Чтение и йога'],
+        correct: 1
+      },
+      greeting: 'Папочка, с Днём Отца! Спасибо, что всегда поддерживаешь мои увлечения — и рисование, и спорт. Ты научил меня не сдаваться и идти к своей цели. Люблю тебя!'
+    },
+    {
+      name: 'Влад',
+      avatar: '👦',
+      photo: 'https://placehold.co/400x400/c5d0c4/4a4a48?text=Влад',
+      question: {
+        text: 'Что Влад обожает больше всего?',
+        options: ['Велосипеды', 'Мотоциклы', 'Скейтборд', 'Ролики'],
+        correct: 0
+      },
+      greeting: 'Пап, с праздником! Спасибо, что всегда на связи и поддерживаешь меня. Ты мой главный пример. С Днём Отца!'
+    },
+    {
+      name: 'Катя',
+      avatar: '👧',
+      photo: 'https://placehold.co/400x400/d8c8c8/4a4a48?text=Катя',
+      question: {
+        text: 'Какой стиль одежды у Кати?',
+        options: ['Классика', 'Романтика', 'Грандж', 'Спорт'],
+        correct: 2
+      },
+      greeting: 'Папуля, ты мой герой! Спасибо, что принимаешь мой стиль и всегда на моей стороне. С Днём Отца! Очень тебя люблю.'
+    },
+    {
+      name: 'Аня',
+      avatar: '👧',
+      photo: 'https://placehold.co/400x400/c4cfd6/4a4a48?text=Аня',
+      question: {
+        text: 'Чем увлекается Аня?',
+        options: ['Танцы и рисование', 'Плавание и шахматы', 'Акробатика и съёмка видео', 'Пение и театр'],
+        correct: 2
+      },
+      greeting: 'Папа, с Днём Отца! Спасибо, что разделяешь мою любовь к капибарам и поддерживаешь моё увлечение акробатикой и видео. Обнимаю крепко!'
+    },
+    {
+      name: 'Настя',
+      avatar: '👶',
+      photo: 'https://placehold.co/400x400/e0cbb8/4a4a48?text=Настя',
+      question: {
+        text: 'Что Настя любит больше всего?',
+        options: ['Гулять в парке', 'Смотреть мультики', 'Играть в куклы', 'Петь песенки'],
+        correct: 1
+      },
+      greeting: 'Папочка, я тебя люблю! Ты мой самый сильный папа на свете! С Днём Отца! 🎈'
+    }
+  ];
+
+  /* ========================================================= */
+
+  const $ = id => document.getElementById(id);
+  const state = { qIndex: 0, answered: false };
+
+  /* ===== Звук ===== */
+  let audioCtx = null;
+  function beep(freq, dur = 0.15, type = 'sine', vol = 0.08) {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type; o.frequency.value = freq;
+      o.connect(g); g.connect(audioCtx.destination);
+      const t = audioCtx.currentTime;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.start(t); o.stop(t + dur + 0.03);
+    } catch (e) {}
+  }
+  const correctSound = () => { beep(660, .12, 'sine', .08); setTimeout(() => beep(880, .16, 'sine', .08), 100); };
+  const wrongSound   = () => beep(240, .16, 'triangle', .08);
+  const winSound     = () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, .26, 'sine', .1), i * 130));
+
+  /* ===== Мягкий фон с плавающими кругами ===== */
+  const bgCanvas = $('bgCanvas');
+  const bctx = bgCanvas.getContext('2d');
+  let W = 0, H = 0, shapes = [];
+
+  function resizeBg() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    bgCanvas.width = W * dpr; bgCanvas.height = H * dpr;
+    bgCanvas.style.width = W + 'px'; bgCanvas.style.height = H + 'px';
+    bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    shapes = [];
+    const palette = [
+      'rgba(196, 154, 154, 0.12)',
+      'rgba(143, 166, 142, 0.12)',
+      'rgba(201, 169, 97, 0.10)',
+      'rgba(215, 200, 184, 0.16)'
+    ];
+    const count = Math.round((W * H) / 55000) + 5;
+    for (let i = 0; i < count; i++) {
+      shapes.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 130 + 70,
+        vx: (Math.random() - 0.5) * 8,
+        vy: (Math.random() - 0.5) * 8,
+        color: palette[(Math.random() * palette.length) | 0]
+      });
+    }
+  }
+
+  let bgLast = 0;
+  function bgLoop(t) {
+    const dt = Math.min((t - bgLast) / 1000, 0.05);
+    bgLast = t;
+
+    bctx.clearRect(0, 0, W, H);
+
+    for (const s of shapes) {
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      if (s.x < -s.r) s.x = W + s.r;
+      if (s.x > W + s.r) s.x = -s.r;
+      if (s.y < -s.r) s.y = H + s.r;
+      if (s.y > H + s.r) s.y = -s.r;
+
+      const g = bctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
+      g.addColorStop(0, s.color);
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      bctx.fillStyle = g;
+      bctx.beginPath();
+      bctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      bctx.fill();
+    }
+
+    requestAnimationFrame(bgLoop);
+  }
+
+  /* ===== Прогресс ===== */
+  function renderProgress() {
+    const prog = $('progress'); prog.innerHTML = '';
+    CHILDREN.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'dot';
+      if (i < state.qIndex) d.classList.add('done');
+      else if (i === state.qIndex) d.classList.add('current');
+      prog.appendChild(d);
+    });
+  }
+  const showProgress = show => $('progress').classList.toggle('show', show);
+
+  /* ===== Экраны ===== */
+  function showScreen(id) {
+    ['screenWelcome', 'screenQuiz', 'screenGreeting', 'screenFinal'].forEach(s => {
+      $(s).classList.toggle('hidden', s !== id);
+    });
+  }
+
+  /* ===== Вопрос ===== */
+  function renderQuiz() {
+    const child = CHILDREN[state.qIndex];
+    const q = child.question;
+    state.answered = false;
+
+    $('quizCounter').textContent = `Вопрос ${state.qIndex + 1} из ${CHILDREN.length}`;
+    $('questionText').textContent = q.text;
+
+    const container = $('optionsContainer');
+    container.innerHTML = '';
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => handleAnswer(i));
+      container.appendChild(btn);
+    });
+
+    const fb = $('feedback');
+    fb.textContent = ''; fb.className = 'feedback';
+
+    renderProgress();
+  }
+
+  function handleAnswer(idx) {
+    if (state.answered) return;
+    state.answered = true;
+
+    const q = CHILDREN[state.qIndex].question;
+    const isCorrect = idx === q.correct;
+
+    document.querySelectorAll('#optionsContainer .option').forEach((b, i) => {
+      b.disabled = true;
+      if (i === q.correct) b.classList.add('correct');
+      else if (i === idx) b.classList.add('wrong');
+    });
+
+    const fb = $('feedback');
+    if (isCorrect) {
+      fb.textContent = 'Верно! Ты знаешь нас наизусть 🎉';
+      fb.className = 'feedback show ok';
+      correctSound();
+    } else {
+      fb.textContent = `Правильный ответ: ${q.options[q.correct]}. Но главное — ты с нами 💛`;
+      fb.className = 'feedback show no';
+      wrongSound();
+    }
+
+    setTimeout(showGreeting, 1600);
+  }
+
+  /* ===== Поздравление ===== */
+  function showGreeting() {
+    const child = CHILDREN[state.qIndex];
+    $('greetingPhoto').src = child.photo;
+    $('greetingName').innerHTML =
+      `<span class="avatar">${child.avatar}</span><span>${child.name}</span>`;
+    $('greetingText').textContent = child.greeting;
+
+    const card = $('greetingCard');
+    card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
+
+    showScreen('screenGreeting');
+    renderProgress();
+  }
+
+  function nextStep() {
+    if (state.qIndex < CHILDREN.length - 1) {
+      state.qIndex++;
+      renderQuiz();
+      showScreen('screenQuiz');
+    } else {
+      showFinal();
+    }
+  }
+
+  /* ===== Финал ===== */
+  function showFinal() {
+    const raw = $('dadName').value.trim();
+    const name = raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'папа';
+    $('finalTitle').textContent = `С Днём Отца, ${name}!`;
+
+    const video = $('finalVideo');
+    const fallback = $('videoFallback');
+
+    fallback.classList.add('hidden');
+    video.style.display = 'block';
+    video.src = VIDEO_SRC;
+    video.load();
+
+    video.onerror = () => {
+      video.style.display = 'none';
+      fallback.classList.remove('hidden');
+    };
+    video.onloadeddata = () => {
+      video.style.display = 'block';
+      fallback.classList.add('hidden');
+    };
+
+    showScreen('screenFinal');
+    showProgress(false);
+    winSound();
+    startConfetti();
+  }
+
+  /* ===== Конфетти (спокойная палитра) ===== */
+  const confCanvas = $('confettiCanvas');
+  const cctx = confCanvas.getContext('2d');
+  let confettiArr = [];
+  let confettiRunning = false;
+  let confettiSpawnActive = false;
+  let confettiLast = 0;
+  let confettiSpawnTimer = 0;
+
+  function resizeConfetti() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    confCanvas.width = window.innerWidth * dpr;
+    confCanvas.height = window.innerHeight * dpr;
+    confCanvas.style.width = window.innerWidth + 'px';
+    confCanvas.style.height = window.innerHeight + 'px';
+    cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function spawnConfetto() {
+    const colors = ['#8fa68e', '#c49a9a', '#c9a961', '#d7c8b8', '#b6c4b5', '#e0cbb8', '#a8b8a7'];
+    confettiArr.push({
+      x: Math.random() * window.innerWidth,
+      y: -20 - Math.random() * 100,
+      vx: (Math.random() - 0.5) * 100,
+      vy: Math.random() * 70 + 70,
+      w: Math.random() * 7 + 5, h: Math.random() * 9 + 7,
+      rot: Math.random() * Math.PI * 2,
+      vr: (Math.random() - 0.5) * 7,
+      sway: Math.random() * Math.PI * 2,
+      swaySp: Math.random() * 2.5 + 1.2,
+      color: colors[(Math.random() * colors.length) | 0]
+    });
+  }
+
+  function confettiLoop(t) {
+    if (!confettiRunning) return;
+    const dt = Math.min((t - confettiLast) / 1000, 0.05);
+    confettiLast = t;
+
+    if (confettiSpawnActive) {
+      confettiSpawnTimer += dt;
+      while (confettiSpawnTimer > 0.09) {
+        confettiSpawnTimer -= 0.09;
+        spawnConfetto();
+      }
+    }
+
+    cctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (let i = confettiArr.length - 1; i >= 0; i--) {
+      const c = confettiArr[i];
+      c.sway += c.swaySp * dt;
+      c.x += (c.vx + Math.sin(c.sway) * 35) * dt;
+      c.y += c.vy * dt;
+      c.rot += c.vr * dt;
+      if (c.y > window.innerHeight + 40) { confettiArr.splice(i, 1); continue; }
+      cctx.save();
+      cctx.translate(c.x, c.y);
+      cctx.rotate(c.rot);
+      cctx.fillStyle = c.color;
+      cctx.globalAlpha = 0.85;
+      cctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
+      cctx.restore();
+    }
+    cctx.globalAlpha = 1;
+    requestAnimationFrame(confettiLoop);
+  }
+
+  function startConfetti() {
+    confCanvas.style.display = 'block';
+    resizeConfetti();
+    confettiRunning = true;
+    confettiSpawnActive = true;
+    confettiArr = [];
+    confettiSpawnTimer = 0;
+    confettiLast = performance.now();
+    requestAnimationFrame(confettiLoop);
+    setTimeout(() => { confettiSpawnActive = false; }, 6000);
+  }
+
+  function stopConfetti() {
+    confettiRunning = false;
+    confettiSpawnActive = false;
+    confettiArr = [];
+    confCanvas.style.display = 'none';
+  }
+
+  /* ===== Запуск ===== */
+  function startQuiz() {
+    state.qIndex = 0;
+    state.answered = false;
+    renderQuiz();
+    showScreen('screenQuiz');
+    showProgress(true);
+    beep(560, 0.1, 'sine', 0.07);
+  }
+
+  function restart() {
+    stopConfetti();
+    state.qIndex = 0;
+    state.answered = false;
+    showProgress(false);
+    showScreen('screenWelcome');
+  }
+
+  /* ===== Обработчики ===== */
+  $('startBtn').addEventListener('click', startQuiz);
+  $('dadName').addEventListener('keydown', e => { if (e.key === 'Enter') startQuiz(); });
+  $('nextBtn').addEventListener('click', nextStep);
+  $('restartBtn').addEventListener('click', restart);
+
+  /* ===== Старт ===== */
+  resizeBg();
+  window.addEventListener('resize', () => {
+    resizeBg();
+    if (confettiRunning) resizeConfetti();
+  });
+  requestAnimationFrame(bgLoop);
+
+  CHILDREN.forEach(c => { const img = new Image(); img.src = c.photo; });
+})();
+</script>
+</body>
+</html>
