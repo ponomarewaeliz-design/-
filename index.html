@@ -738,15 +738,15 @@
 
     const iframe = $('finalVideo');
     const fallback = $('videoFallback');
-
-    // Проверяем, вставил ли пользователь ссылку
-    if (!VK_VIDEO_URL || VK_VIDEO_URL.includes('https://vk.ru/video811061365_456239184?list=d2b135e202e8ceecd3')) {
-      // Если ссылки нет — показываем заглушку
-      iframe.style.display = 'none';
-      fallback.classList.remove('hidden');
-    } else {
-      // Если ссылка есть — загружаем iframe
-      iframe.src = VK_VIDEO_URL;
+   
+      // Проверяем, вставил ли пользователь ссылку
+  if (!VK_VIDEO_URL || VK_VIDEO_URL.includes('ВСТАВЬТЕ_ССЫЛКУ_СЮДА')) {
+    // Если ссылки нет - показываем заглушку
+    iframe.style.display = 'none';
+    fallback.classList.remove('hidden');
+  } else {
+    // Если ссылка есть - загружаем iframe
+    iframe.src = VK_VIDEO_URL;
       iframe.style.display = 'block';
       fallback.classList.add('hidden');
     }
