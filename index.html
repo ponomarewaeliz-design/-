@@ -325,7 +325,7 @@
     max-width: 420px;
   }
 
-  /* ========== Финал ========== */
+  /* ========== Финал (Видео) ========== */
   .video-wrap {
     width: 100%;
     aspect-ratio: 16/9;
@@ -337,10 +337,11 @@
     box-shadow: 0 14px 36px rgba(120, 105, 85, .18);
     border: 1px solid var(--border);
   }
-  .video-wrap video {
+  
+  /* Стили для iframe */
+  .video-wrap iframe {
     width: 100%; height: 100%; display: block;
-    object-fit: contain;
-    background: #000;
+    border: none;
   }
 
   .video-fallback {
@@ -458,12 +459,17 @@
     <h1 id="finalTitle">С Днём Отца, папа!</h1>
     <p class="sub">Наше видео-поздравление для тебя:</p>
     <div class="video-wrap" id="videoWrap">
-      <video id="finalVideo" controls playsinline preload="metadata"></video>
+      
+      <!-- ТЕПЕРЬ ЗДЕСЬ IFRAME ВМЕСТО VIDEO -->
+      <iframe id="finalVideo" src="" frameborder="0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>
+      
+      <!-- Заглушка, если ссылка не добавлена -->
       <div class="video-fallback hidden" id="videoFallback">
         <div class="fallback-icon">🎬</div>
         <p>Здесь будет наше видео-поздравление</p>
-        <p class="small">Положите файл <code>greeting.mp4</code> рядом с этим файлом</p>
+        <p class="small">Вставьте ссылку от VK в переменную <code>VK_VIDEO_URL</code> в коде</p>
       </div>
+
     </div>
     <div class="final-message">
       Спасибо, что ты рядом — пусть и на расстоянии. Мы тебя очень любим ❤️
@@ -479,10 +485,10 @@
   'use strict';
 
   /* =========================================================
-     НАСТРОЙКИ — ФОТО, ВОПРОСЫ, ПОЗДРАВЛЕНИЯ И ВИДЕО
+     ВАЖНО: ВСТАВЬТЕ СЮДА ССЫЛКУ ИЗ VK ВИДЕО
      ========================================================= */
-
-  const VIDEO_SRC = 'greeting.mp4'; // ← положите свой видеофайл
+  // Пример: 'https://vk.com/video_ext.php?oid=-12345678&id=456239017&hash=abcdef1234567890'
+  const VK_VIDEO_URL = 'https://vk.ru/video811061365_456239184?list=d2b135e202e8ceecd3'; 
 
   const CHILDREN = [
     {
@@ -730,22 +736,20 @@
     const name = raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'папа';
     $('finalTitle').textContent = `С Днём Отца, ${name}!`;
 
-    const video = $('finalVideo');
+    const iframe = $('finalVideo');
     const fallback = $('videoFallback');
 
-    fallback.classList.add('hidden');
-    video.style.display = 'block';
-    video.src = VIDEO_SRC;
-    video.load();
-
-    video.onerror = () => {
-      video.style.display = 'none';
+    // Проверяем, вставил ли пользователь ссылку
+    if (!VK_VIDEO_URL || VK_VIDEO_URL.includes('https://vk.ru/video811061365_456239184?list=d2b135e202e8ceecd3')) {
+      // Если ссылки нет — показываем заглушку
+      iframe.style.display = 'none';
       fallback.classList.remove('hidden');
-    };
-    video.onloadeddata = () => {
-      video.style.display = 'block';
+    } else {
+      // Если ссылка есть — загружаем iframe
+      iframe.src = VK_VIDEO_URL;
+      iframe.style.display = 'block';
       fallback.classList.add('hidden');
-    };
+    }
 
     showScreen('screenFinal');
     showProgress(false);
@@ -753,7 +757,7 @@
     startConfetti();
   }
 
-  /* ===== Конфетти (спокойная палитра) ===== */
+  /* ===== Конфетти ===== */
   const confCanvas = $('confettiCanvas');
   const cctx = confCanvas.getContext('2d');
   let confettiArr = [];
